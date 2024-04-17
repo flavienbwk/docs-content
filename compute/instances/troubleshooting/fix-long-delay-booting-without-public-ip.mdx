@@ -1,0 +1,29 @@
+---
+meta:
+  title: Fix long delays when booting without a public IP
+  description: This page explains how to avoid long delays when booting without a public IP
+content:
+  h1: Fix long delays when booting without a public IP
+  paragraph: This page explains how to avoid long delays when booting without a public IP
+tags: ipv4 no public ip
+dates:
+  validation: 2024-04-17
+  posted: 2024-04-17
+categories:
+  - compute
+---
+
+When booting an instance which has no public IP address and is connected to a private network, user may experience long delays during the boot sequence of the instance. This is specially true with Ubuntu Jammy where the delay goes up to 5 minutes. Other distributions may show delays of around 2 minutes when booting. This is cause by systemd which fails to configure the public NIC and needs to reach its timeout before continuing.
+
+This delay may be brought to a minimum by adding the following bypass to the systemd-networkd-wait-online.service manually :
+
+```(bash)
+mkdir /etc/systemd/system/systemd-networkd-wait-online.service.d
+$ cat >/etc/systemd/system/systemd-networkd-wait-online.service.d/wait-for-30-seconds.conf<<EOF
+[Service]
+ExecStart=
+ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --timeout=5 --any
+EOF
+```
+
+This will be applied at the next reboot and will limit the timeout to 5 seconds
